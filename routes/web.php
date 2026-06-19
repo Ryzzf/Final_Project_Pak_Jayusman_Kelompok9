@@ -1,0 +1,98 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\MutasiStokController;
+use App\Http\Controllers\StokOpnameController; 
+use App\Http\Controllers\SupervisiController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\BarangController;
+use App\Http\Controllers\PegawaiController; // <-- TAMBAHAN UNTUK MASTER PEGAWAI
+use Illuminate\Support\Facades\Route;
+
+// Redirect root ke halaman login
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+// Dashboard Utama
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('dashboard');
+
+// Group middleware auth untuk route yang butuh login
+Route::middleware(['auth'])->group(function () {
+
+    // Profile routes (dari Breeze)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ==============================================================
+    // 1. RUTE AKTIF 
+    // ==============================================================
+    
+    // Rute Kasir
+    Route::get('/transaksi/create', [TransaksiController::class, 'create'])->name('transaksi.create');
+    Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
+    Route::get('/struk/{id}', [TransaksiController::class, 'cetakStruk'])->name('transaksi.struk');
+    Route::get('/struk/{id}/pdf', [TransaksiController::class, 'cetakPDF'])->name('transaksi.struk.pdf');
+
+    // Rute Gudang (Mutasi & Opname)
+    Route::get('/stok/mutasi', [MutasiStokController::class, 'create'])->name('stok.mutasi.create');
+    Route::post('/stok/mutasi', [MutasiStokController::class, 'store'])->name('stok.mutasi.store');
+    Route::get('/stok/opname', [StokOpnameController::class, 'index'])->name('stok.opname.index');
+    Route::post('/stok/opname', [StokOpnameController::class, 'store'])->name('stok.opname.store');
+
+    // Rute Supervisor (Pantau Transaksi)
+    Route::get('/supervisi/transaksi', [SupervisiController::class, 'index'])->name('supervisi.transaksi');
+
+    // Rute Manajer (Laporan Cabang & Pantau Stok)
+    Route::get('/laporan/manager', [LaporanController::class, 'index'])->name('laporan.manager');
+    Route::get('/manager/stok', [LaporanController::class, 'stokToko'])->name('manager.stok');
+    Route::get('/laporan/cabang/{id}', [LaporanController::class, 'percabang'])->name('laporan.percabang');
+
+    // ==============================================================
+    // RUTE MASTER DATA (HANYA UNTUK OWNER & MANAGER)
+    // ==============================================================
+    // Master Barang
+    Route::get('/master/barang', [BarangController::class, 'index'])->name('master.barang');
+    Route::get('/master/barang/create', [BarangController::class, 'create'])->name('master.barang.create');
+    Route::post('/master/barang', [BarangController::class, 'store'])->name('master.barang.store');
+    Route::get('/master/barang/{barang}/edit', [BarangController::class, 'edit'])->name('master.barang.edit');
+    Route::put('/master/barang/{barang}', [BarangController::class, 'update'])->name('master.barang.update');
+    Route::delete('/master/barang/{barang}', [BarangController::class, 'destroy'])->name('master.barang.destroy');
+
+    // Master Pegawai (BARU)
+    Route::get('/master/pegawai', [PegawaiController::class, 'index'])->name('master.pegawai');
+    Route::get('/master/pegawai/create', [PegawaiController::class, 'create'])->name('master.pegawai.create');
+    Route::post('/master/pegawai', [PegawaiController::class, 'store'])->name('master.pegawai.store');
+    Route::get('/master/pegawai/{id}/edit', [PegawaiController::class, 'edit'])->name('master.pegawai.edit');
+    Route::put('/master/pegawai/{id}', [PegawaiController::class, 'update'])->name('master.pegawai.update');
+    Route::delete('/master/pegawai/{id}', [PegawaiController::class, 'destroy'])->name('master.pegawai.destroy');
+
+    // ==============================================================
+    // RUTE OWNER (PEMILIK TOKO)
+    // ==============================================================
+    // Tampilan Utama Daftar Cabang
+    Route::get('/owner/cabang', [OwnerController::class, 'cabang'])->name('owner.cabang');
+    
+    // Proses CRUD Cabang (Tambah, Edit, Hapus)
+    Route::get('/owner/cabang/create', [OwnerController::class, 'createCabang'])->name('owner.cabang.create');
+    Route::post('/owner/cabang', [OwnerController::class, 'storeCabang'])->name('owner.cabang.store');
+    Route::get('/owner/cabang/{cabang}/edit', [OwnerController::class, 'editCabang'])->name('owner.cabang.edit');
+    Route::put('/owner/cabang/{cabang}', [OwnerController::class, 'updateCabang'])->name('owner.cabang.update');
+    Route::delete('/owner/cabang/{cabang}', [OwnerController::class, 'destroyCabang'])->name('owner.cabang.destroy');
+
+    // Menu Pemantauan Lainnya
+    Route::get('/owner/stok', [OwnerController::class, 'stok'])->name('owner.stok');
+    Route::get('/owner/transaksi', [OwnerController::class, 'transaksi'])->name('owner.transaksi');
+    Route::get('/owner/laporan', [OwnerController::class, 'laporan'])->name('owner.laporan');
+    Route::get('/owner/laporan/pdf', [OwnerController::class, 'cetakPDF'])->name('owner.laporan.pdf');
+
+});
+
+// Include auth routes (login, register, lupa password) dari Breeze
+require __DIR__.'/auth.php';
